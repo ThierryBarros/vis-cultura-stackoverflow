@@ -1,24 +1,29 @@
 ---
 title: "Comentários e cultura"
-output:
-    html_document:
-    df_print: paged
 theme: sandstone
+output:
+  html_document: null
+  pdf_document: default
+  df_print: paged
 ---
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(here)
 library(viridis)
-source(here::here("code/lib.R"))
+source(here::here("code/import_data.R"))
+library(gridExtra)
+library(GGally)
 theme_set(theme_bw())
 
 knitr::opts_chunk$set(tidy = FALSE,
                       fig.width = 6,
                       fig.height = 5)
+
+options(warn=-1)
 ```
 
-```{r read}
+```{r read, echo=FALSE, message=FALSE}
 dados = read_csv(
     here::here("data/participation-per-country.csv"),
     col_types = cols(
@@ -33,22 +38,235 @@ dados = read_csv(
     )
 ) %>% 
     filter(usuarios > 200)
-glimpse(dados)
 ```
 
-Estamos interessados na relação entre quanto as pessoas de diferentes países comentam em questões dos outros. A proporção das pessoas do país que comentou nas questões de outros está medido na variável `comentaram_prop`. 
+O objetivo desse estudo é analisar a relação entre quanto as pessoas de diferentes países comentam em questões dos outros. A proporção das pessoas do país que comentou nas questões de outros está medido na variável `comentaram_prop`. 
 
 Considerando essa variável, queremos examinar a relação entre ela e o quão hierárquicas são as relações em um país (`PDI`). Queremos também levar em conta o quanto as pessoas daquele país têm acesso à Internet (`Internet`) e qual o tamanho da base de dados que detectamos daquele país (`usuarios`). 
 
+## Pré-processamento dos dados
+
+Primeiramente, foi selecionado apenas os dados que seriam utilizados na análise. **Removendo linhas com valores nulos** e alterando alguns dados para facilitar a leitura e entendimento das visualizações. A tabela abaixo apresenta os dados após essa etapa inicial de pré-processamento.
+
+```{r}
+dados = dados %>% select(c('country','PDI','Internet','usuarios','comentaram_prop','six_regions')) #Filtrando as colunas que serão utilizadas na análise
+
+dados = na.omit(dados) #Removendo linhas com valores NA
+
+dados <- dados %>% mutate(six_regions = case_when(
+    six_regions == 'america' ~ "América",
+    six_regions == 'east_asia_pacific' ~ "Ásia Pacífico",
+    six_regions == 'europe_central_asia' ~ "Europa e Ásia Central",
+    six_regions == 'south_asia' ~ "Ásia do Sul",
+    six_regions == 'middle_east_north_africa' ~ "Oriente Médio e Norte da África",
+    six_regions == 'sub_saharan_africa' ~ "África subsariana",
+    TRUE ~ six_regions
+  )
+)
+
+glimpse(dados)
+```
+ 
+## Análise exploratória dos dados
+
+Finalizada a etapa inicial de pré-processamento dos dados, foi realizado uma análise individual em cada uma das variáveis que serão utilizadas na pesquisa, para poder visualizar como se comportam e como é a distribuição de seus dados. Com isso, é possível descobrir a priori se existe inconsistência nos dados, valores incomuns, que podem afetar os resultados da análise. 
+
+As imagens abaixo apresentam os boxsplots de distribuição de cada uma das variáveis. Analisando as figuras abaixo, podemos ver que nas três primeiras variáveis (proporção de comentários, PDI e Nível de acesso a Internet) não apresentaram valores incomuns e estão bem distribuidas no eixo y. Porém, na variável "Número de usuários" parece existir muitos valores perto do 0 e poucos valores muito grandes (pontos vermelhos), que seriam *outliers* nos dados.
+
+Naturalmente, o que deveria ser realizado seria outro processamento no dados para remoção desses valores atípicos. Porém, como o conjunto de dados é limitado e cada amostra do conjunto representa uma país, a remoção de dados implicaria em remoção daquele país na análise, o que por sua vez, poderia enfraquecer a análise em geral. Outro ponto a ser destacado é que, como a relação principal se dará pelas variáveis "Proporção de comentários" e "PDI", os *outliers* da variável "Número de usuários" não afetará, de forma direta, essa relação. Por isso, foi decidido manter todos os dados.
+
+```{r, message=FALSE, warning=FALSE}
+pc <- ggplot(dados, aes(x = 'Proporção de Comentários', y = comentaram_prop)) + 
+  geom_boxplot(width = 0.5, outlier.colour = "red") +
+  geom_jitter(width = 0.1, alpha = .5)+
+  ylab("")+
+  xlab("")    
+
+pdi <- ggplot(dados, aes(x = 'PDI', y = PDI)) + 
+  geom_boxplot(width = 0.5, outlier.colour = "red") +
+  geom_jitter(width = 0.1, alpha = .5)+
+  ylab("")+
+  xlab("") 
+
+internet <- ggplot(dados, aes(x = 'Nível de acesso a Internet', y = Internet)) + 
+  geom_boxplot(width = 0.5, outlier.colour = "red") +
+  geom_jitter(width = 0.1, alpha = .5)+
+  ylab("")+
+  xlab("") 
+
+usuarios <- ggplot(dados, aes(x = 'Número de usuários', y = usuarios)) +
+  geom_boxplot(width = 0.5, alpha = .5, outlier.colour = "red") +
+  ylab("")+
+  xlab("") 
+
+
+grid.arrange(pc, pdi, internet, usuarios, ncol = 2)
+```
+
+Uma outra alternativa para visualização da distribuição das mesmas variáveis, é através de histrogramas e gráficos de densidado. Como podemos ver abaixo, as três primeiras variáveis parecem ter distribuições normais, enquato a quarta variável tem uma calda longa, ou seja, alta concetração de valores pequenos e alguns raros valores grandes.
+
+```{r, message=FALSE, warning=FALSE}
+pc <- ggplot(dados, aes(x=comentaram_prop)) + 
+ geom_histogram(aes(y=..density..), 
+                breaks=seq(min(dados$comentaram_prop), max(dados$comentaram_prop), by=0.04), fill="white", col="blue") +
+ geom_density(alpha=.2, fill="lightblue") +
+ xlab("Proporção de comentário") +    
+ ylab("densidade") 
+
+pdi <- ggplot(dados, aes(x=PDI)) + 
+ geom_histogram(aes(y=..density..), 
+                breaks=seq(min(dados$PDI), max(dados$PDI), by=13), fill="white", col="blue") +
+ geom_density(alpha=.2, fill="lightblue") +
+ xlab("PDI") +    
+ ylab("densidade") 
+
+internet <- ggplot(dados, aes(x=Internet)) + 
+ geom_histogram(aes(y=..density..), 
+                breaks=seq(0, max(dados$Internet), by=10), fill="white", col="blue") +
+ geom_density(alpha=.2, fill="lightblue") +
+ xlab("Nível de acesso a Internet") +    
+ ylab("densidade") 
+
+usuarios <- ggplot(dados, aes(x=usuarios)) + 
+ geom_histogram(aes(y=..density..), 
+                fill="white", col="blue") +
+ geom_density(alpha=.2, fill="lightblue") +
+ xlab("Número de usuários") +    
+ ylab("Densidade") 
+
+
+grid.arrange(pc, pdi, internet, usuarios, ncol = 2)
+```
+
 ## Examinando essa relação
 
-Faça uma visualização que usa os princípios de eficácia no projeto de visualizações para facilitar as comparações que você acha que são as mais importantes para entendermos esse contexto. 
+Partindo agora, para à análise da correlação entre as variáveis. Uma primeira análise simples que pode ser realizada, é a relação entre todas as variáveis do conjunto de dados. Analisando a imagem abaixo, percebemos que, a correlação mais forte que existe no conjunto, é entre a "Proporção de comentários" e "PDI" com um valor de **-0.649** considerada uma correlação negativa moderada. Outra correlação moderada que podemos destacar, é entre "Proporção de comentários" e "Nível de acesso a Internet" com um valor de **0.622** correlação positiva moderada. Intuitivamente faz sentido essa variáveis terem uma correlação moderada, ou forte, pois quanto mais acesso a internet tem um país mais ele será suscetível a comentar em questões.
 
-## Outras formas de ver
+```{r, message=FALSE, warning=FALSE}
+dados %>% select(-country, -six_regions) %>% ggpairs(progress = F)
+```
 
-Em seguida, faça 5 visualizações que usem as mesmas variáveis e também pontos, mas que sejam **menos eficazes** que a que você escolheu acima. 
+## Analisando a correlação entre as 4 variáveis
+
+A partir da figura apresentada logo abaixo, podemos perceber obter algumas informação. 
+
+* Podemos perceber que, quanto maior o nível de acesso a internet de um país, menos hierárquica é as relações. Isso se percebe no gráfico pois, em média, os pontos mais escuros estão mais abaixo, no eixo y, do que os mais claros. 
+* Podemos também perceber que, o número de usuários não parece ter relação com nenhuma das duas outras três variáveis. Pois, além do tamanho dos pontos, que representa o número de usários, estar distribuida uniformente por todo o gráfico (não parece ter pontos maiores ou menores concentrados em uma região específica). Támbém, é possível ver que existem pontos de diferentes tamanhos com cores mais escuras e mais claras, o que indica que não há relação entre as variáveis "Número de usuários" e "Nível de acesso a internet". 
+
+Por fim, podemos concluir que quanto maior a proporção de comentários, menos hierárquicas são as relações e maior é o acesso a internet.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = dados) + 
+  geom_point(mapping = aes(x = comentaram_prop, y = PDI, alpha = Internet, size = usuarios), position = "jitter") +
+  geom_smooth(mapping = aes(x = comentaram_prop, y = PDI), size = .5, se = FALSE) +
+  scale_size(name="Número de usuários por país") +
+  ggtitle("Relação entre a proporção de comentários\ne o quão hierárquicas são as relações em um país") +
+  xlab("Proporção de comentários") +    
+  ylab("Quão hierárquica é a relação")
+
+```
+
+## Outras formas de visualizar à relação
+
+#### Em seguida, serão aprentadas 5 visualizações que usam as mesmas variáveis e também pontos, mas que são **menos eficazes** que a que você visualização prosposta anteriormente.
+
+**1.** Primeira maneira de visualizar a mesma análise, só que de forma menos eficaz. Seria utilizar a cor dos pontos para representar uma variável contínua, pois humanos têm dificuldade de diferenciar tons de cores muito semelhantes. Analisando o gráfico abaixo, se torna mais difícil saber, quais países têm mais ou menos usuários. Cores são mais comumente usados para rotular e categorizar elementos.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = dados) + 
+  geom_point(mapping = aes(x = comentaram_prop, y = PDI, alpha = Internet, color = usuarios)) +
+  geom_smooth(mapping = aes(x = comentaram_prop, y = PDI), size = .5, se = FALSE) +
+  scale_size(name="Número de usuários por país") +
+  ggtitle("Relação entre a proporção de comentários\ne o quão hierárquicas são as relações em um país") +
+  xlab("Proporção de comentários") +    
+  ylab("Quão hierárquica é a relação")
+```
+
+**2.** Outra alternativa, seria utilizar o tamanho dos pontos para representar o nível de acesso à Internet. Como a distriuição da variável "Nível de acesso a internet" possui muitos valores altos o gráfico fica cheio de pontos grandes o que pode dificultar a leitura, pois muitos pontos se sobrepoem. Outro problema, é utilizar a claridade do pontos para representar o "Número de usuários", pois ao contrário do "nível de acesso", essa variável possui muitos valores baixos, fazendo com que a maioria dos pontos fiquem muito claros, dificultando a visualização.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = dados) + 
+  geom_point(mapping = aes(x = comentaram_prop, y = PDI, alpha = usuarios, size = Internet)) +
+  geom_smooth(mapping = aes(x = comentaram_prop, y = PDI), size = .5, se = FALSE) +
+  scale_size(name="Internet") +
+  ggtitle("Relação entre a proporção de comentários\ne o quão hierárquicas são as relações em um país") +
+  xlab("Proporção de comentários") +    
+  ylab("Quão hierárquica é a relação")
+```
+
+**3.** Outra alternativa, seria utilizar a cor para representar o número de usuários. Como na primeira maneira, um dos problemas seria a utilização de cores para representar uma variável contínua. O segundo problema é que, a distribuição dos dados da variável "Número de usuários" tem alta concentração de valores pequenos, fazendo com que o gráfico se quase todo preenchido por pontos mais escuros o que deixa uma leitura mais complexa das informações apresentadas. 
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = dados) + 
+  geom_point(mapping = aes(x = comentaram_prop, y = PDI, color = usuarios, size = Internet)) +
+  geom_smooth(mapping = aes(x = comentaram_prop, y = PDI), size = .5, se = FALSE) +
+  scale_size(name="Internet") +
+  ggtitle("Relação entre a proporção de comentários\ne o quão hierárquicas são as relações em um país") +
+  xlab("Proporção de comentários") +    
+  ylab("Quão hierárquica é a relação")
+```
+
+**4.** Outra alternativa, seria remover as legendas. Nesse caso não foi mexido na representação das características (Claridade, tamanho, eixo x, eixo y) para representar cada variável. Porém, foram removidos todas as legendas, isso acaba dificultando a leitura por um público que não conhece os dados a serem estudos. Por exemplo, um pessoa leiga não vai saber o que signigica a variável "PDI" no eixo y.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = dados) + 
+  geom_point(mapping = aes(x = comentaram_prop, y = PDI, alpha = Internet, size = usuarios), position = "jitter") + 
+  geom_smooth(mapping = aes(x = comentaram_prop, y = PDI), size = .5, se = FALSE) +
+  scale_size(name="Número de usuários por país") 
+
+```
+
+**5.** Outra alternativa, essa é uma maneira de poder enganar o público adicionando pequena quantidade de ruído aleatório a cada ponto através da função jitter que espalha dos dados pelo mapa. Essa função, jitter, embora torne seu gráfico menos preciso em pequenas escalas, como no exemplo abaixo, torna seu gráfico mais revelador em grandes escalas quando existem muita sobreposição de dados. Como nosso exemplo possui poucos dados, não seria uma boa  abordagem. Podemos ver que esse ruído, deu a impressão que não existe relação entre as variáveis no eixo x e y.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = dados) + 
+  geom_jitter(mapping = aes(x = comentaram_prop, y = PDI, alpha = Internet, size = usuarios), width = 0.2)+
+  scale_size(name="Número de usuários por país") +
+  ggtitle("Relação entre a proporção de comentários\ne o quão hierárquicas são as relações em um país") +
+  xlab("Proporção de comentários") +    
+  ylab("Quão hierárquica é a relação")
+```
+
 
 ## Bônus
 
-Inclua o continente dos países (`six_regions`) na visualização.
+### Incluindo o continente dos países (`six_regions`) na visualização.
+
+**1.** A mesma visualização realizada a princípio, porém utilizando cores para representar os continentes. Como é uma variável categórica, é uma boa opção utilizar as cores como forma de apresentação. Além disso, foi escolhido uma palleta de cores, onde as corres se diferenciassem bem umas das outras.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = dados) + 
+  geom_point(mapping = aes(x = comentaram_prop, y = PDI, alpha = Internet, size = usuarios, color = six_regions)) +
+  geom_smooth(mapping = aes(x = comentaram_prop, y = PDI), se = FALSE, color = "black", size = .5) +
+  theme(legend.key.size = unit(1,"line"))+
+  scale_color_manual(values = c("#ee4035", "#ffa500", "#9400d3", "#028900", "#0392cf","#964b00"))+
+  labs(
+        x = "Proporção de comentários",
+        y = "Quão hierárquica é a relação",
+        color = "Continentes",
+        alpha="Nível de acesso a Internet", 
+        size ="Número de usuários por país",
+        title = "Relação entre a proporção de comentários \ne o quão hierárquicas são as relações em um país"
+    )
+    
+```
+
+**2.** Outra alternativa de incluir a variável "Continente" seria agrupar os dados por continente e visualizar cada relação separadamente, para ver como cada uma se comporta por continente. Essa forma é mais informativa, pois você sabe como cada "continente" se comporta separadamente, porém os gráficos ficam menores, dificultando a visualização.
+
+```{r, message=FALSE, warning=FALSE}
+ggplot(data = dados) + 
+  geom_point(mapping = aes(x = comentaram_prop, y = PDI, alpha = Internet, size = usuarios)) +
+  geom_smooth(mapping = aes(x = comentaram_prop, y = PDI), color = "red", size=.5, se = FALSE) +
+  theme(legend.key.size = unit(1,"line"))+
+  facet_wrap(~six_regions, ncol= 2) +
+  labs(
+        x = "Proporção de comentário",
+        y = "Valor hierarquico das relações",
+        alpha="Nível de acesso a Internet", 
+        size ="Número de usuários por país",
+        title = "Relação entre a proporção de comentários \ne o quão hierárquicas são as relações em um país"
+    )
+```
+
+
 
