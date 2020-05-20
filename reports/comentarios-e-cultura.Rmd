@@ -252,7 +252,7 @@ ggplot(data = dados) +
     
 ```
 
-**2.** Outra alternativa de incluir a variável "Continente" seria agrupar os dados por continente e visualizar cada relação separadamente, para ver como cada uma se comporta por continente. Essa forma é mais informativa, pois você sabe como cada "continente" se comporta separadamente, porém os gráficos ficam menores, dificultando a visualização.
+**2.** Uma outra alternativa de incluir a variável "Continente", seria agrupar os dados por continente e visualizar como cada relação se comporta separadamente. Essa alternativa é mais informativa, pois você sabe como cada "continente" se comporta separadamente, porém os gráficos ficam menores, dificultando a visualização.
 
 ```{r, message=FALSE, warning=FALSE}
 ggplot(data = dados) + 
