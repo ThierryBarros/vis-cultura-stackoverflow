@@ -239,7 +239,7 @@ ggplot(data = dados) +
 ggplot(data = dados) + 
   geom_point(mapping = aes(x = comentaram_prop, y = PDI, alpha = Internet, size = usuarios, color = six_regions)) +
   geom_smooth(mapping = aes(x = comentaram_prop, y = PDI), se = FALSE, color = "black", size = .5) +
-  theme(legend.key.size = unit(1,"line"))+
+  theme(legend.key.size = unit(0.9,"line"))+
   scale_color_manual(values = c("#ee4035", "#ffa500", "#9400d3", "#028900", "#0392cf","#964b00"))+
   labs(
         x = "Proporção de comentários",
