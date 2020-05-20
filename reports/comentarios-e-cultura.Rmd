@@ -169,7 +169,7 @@ ggplot(data = dados) +
 
 ## Outras formas de visualizar à relação
 
-#### Em seguida, serão aprentadas 5 visualizações que usam as mesmas variáveis e também pontos, mas que são **menos eficazes** que a que você visualização prosposta anteriormente.
+#### Em seguida, serão apresentadas 5 visualizações que usam as mesmas variáveis e também pontos, mas que são **menos eficazes** que a que você visualização prosposta anteriormente.
 
 **1.** Primeira maneira de visualizar a mesma análise, só que de forma menos eficaz. Seria utilizar a cor dos pontos para representar uma variável contínua, pois humanos têm dificuldade de diferenciar tons de cores muito semelhantes. Analisando o gráfico abaixo, se torna mais difícil saber, quais países têm mais ou menos usuários. Cores são mais comumente usados para rotular e categorizar elementos.
 
