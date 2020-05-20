@@ -151,7 +151,8 @@ dados %>% select(-country, -six_regions) %>% ggpairs(progress = F)
 A partir da figura apresentada logo abaixo, podemos perceber obter algumas informação. 
 
 * Podemos perceber que, quanto maior o nível de acesso a internet de um país, menos hierárquica é as relações. Isso se percebe no gráfico pois, em média, os pontos mais escuros estão mais abaixo, no eixo y, do que os mais claros. 
-* Podemos também perceber que, o número de usuários não parece ter relação com nenhuma das duas outras três variáveis. Pois, além do tamanho dos pontos, que representa o número de usários, estar distribuida uniformente por todo o gráfico (não parece ter pontos maiores ou menores concentrados em uma região específica). Támbém, é possível ver que existem pontos de diferentes tamanhos com cores mais escuras e mais claras, o que indica que não há relação entre as variáveis "Número de usuários" e "Nível de acesso a internet". 
+* Podemos também perceber que, o número de usuários não parece ter relação com nenhuma das outras três variáveis. Pois, o tamanho dos pontos, que representa o número de usários, estar distribuida uniformente por todo o gráfico (não parece ter pontos maiores ou menores concentrados em uma região específica). Támbém, é possível ver que existem pontos de diferentes tamanhos com cores mais escuras e mais claras, o que indica que não há relação entre as variáveis "Número de usuários" e "Nível de acesso a internet". 
+* A linha em azul representa a curva de ajustamento dos dados.
 
 Por fim, podemos concluir que quanto maior a proporção de comentários, menos hierárquicas são as relações e maior é o acesso a internet.
 
